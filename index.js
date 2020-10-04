@@ -27,7 +27,7 @@ const config = {
     }
 }
 
-const initializeData = async (userSize, cartSize, cartItemSize) => {
+const initializeData = async (userSize, cartSize) => {
 
     if(userSize > cartSize) {
         console.log("Number of carts needs to be greater or equal number of users (to ensure each user has at least 1 cart).");
@@ -68,42 +68,31 @@ const initializeData = async (userSize, cartSize, cartItemSize) => {
         users[userIndex].carts.push(cart);
     }
     
-    for (let j=0; j<cartItemSize; j++) {
-        const cartIndex = Math.floor(Math.random() * cartSize)
-        const cartItem = {
-            cartItemId: ++cartItemNextId,
-            cartId: carts[cartIndex].cartId,
-            quantity: Math.floor(Math.random() * 100 + 1)
-        };
-        cartItems.push(cartItem);
-        carts[cartIndex].cartItems.push(cartItem);
+    const storeItem1 = {
+        storeItemId: ++storeItemNextId,
+        storeItemName: "phone",
+        price: 500
     }
+    
+    const storeItem2 = {
+        storeItemId: ++storeItemNextId,
+        storeItemName: "cell phone",
+        price: 800
+    }
+    
+    const storeItem3 = {
+        storeItemId: ++storeItemNextId,
+        storeItemName: "laptop",
+        price: 1000
+    }
+     
+    storeItems.push(storeItem1);
+    storeItems.push(storeItem2);
+    storeItems.push(storeItem3);
+
 }
 
-const storeItem1 = {
-    storeItemId: ++storeItemNextId,
-    storeItemName: "phone",
-    price: 500
-}
-
-const storeItem2 = {
-    storeItemId: ++storeItemNextId,
-    storeItemName: "cell phone",
-    price: 800
-}
-
-const storeItem3 = {
-    storeItemId: ++storeItemNextId,
-    storeItemName: "laptop",
-    price: 1000
-}
-
-
-storeItems.push(storeItem1);
-storeItems.push(storeItem2);
-storeItems.push(storeItem3);
-
-initializeData(10, 20, 30);
+initializeData(10, 10);
 
 
 //get all users - Additional
@@ -216,22 +205,29 @@ app.get('/user/:userId/cart/:cartId/cartItem', (req, res) => {
 //create a new item in specific user's cart, return new item
 app.post('/cart/:cartId/cartItem', (req, res) => {
     //check if the request body is lack of properties
-    if (!req.body.quantity) {
+    if (!(req.body.storeItemId && req.body.quantity)) {
         res.send(422);
+        return;
+    }
+    let foundStoreItem = storeItems.find((storeItem) => {
+        return storeItem.storeItemId == req.body.storeItemId;
+    })
+    //response 404 if the item is not on the store
+    if (!foundStoreItem) {
+        res.send(404);
         return;
     }
     const foundCart = carts.find((cart) => {
         return cart.cartId == req.params.cartId;
     });
-    //response 404 if the cart is not found.
-    //new cart is not created (if not found) because each cart belongs to a user. If the user is NOT specified, creating new cart requires to create new user.
-    //That doesn't make sense to create a new user in order to add an item.
+    //response 404 if the cart is not found
     if (!foundCart) {
         res.send(404);
         return;
     }
     const newItem = {
         cartItemId: ++cartItemNextId,
+        storeItemId: req.body.storeItemId,
         cartId: foundCart.cartId,
         quantity: req.body.quantity
     }
