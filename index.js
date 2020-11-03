@@ -82,7 +82,7 @@ app.listen(port);
 
 //JWT - get information of logined user
 router.get('/user/myinfo', authenticate, async (req, res) => {
-    res.send(req.jwtInfo.user);
+    res.send(req.jwtInfo.user || 404);
 });
 
 //get all users - Additional
@@ -119,7 +119,7 @@ router.get('/user/:userId', authenticate, async (req, res) => {
 router.post('/user', userValidator, authenticate, async (req, res) => {
     //validate request body
     if (!validationResult(req).isEmpty()) {
-        
+        return res.status(400).send("Invalid request body.");
     }
 
     const userLogin = await User.findOne({login: req.body.login});
