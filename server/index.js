@@ -12,10 +12,24 @@ const StoreItem = require('./StoreItem');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+const cors = require('cors');
 
 const express = require('express');
 const app = express();
+app.use(cors({
+    credentials: true,
+    origin: 'http://localhost:3000'
+}));
 app.use(express.json());
+// app.use(function(req, res, next) {
+//     res.header('Content-Type', 'application/json;charset=UTF-8')
+//     res.header('Access-Control-Allow-Credentials', true)
+//     res.header(
+//       'Access-Control-Allow-Headers',
+//       'Origin, X-Requested-With, Content-Type, Accept'
+//     )
+//     next()
+// })
 const router = express.Router();
 
 const {body, validationResult} = require('express-validator');
@@ -26,6 +40,7 @@ const userValidator = [
 ];
 const cartValidator = [
     body('storeItemId').isMongoId(),
+    body('name').isString(),
     body('quantity').isNumeric()
 ];
 
@@ -237,6 +252,7 @@ router.post('/cart/:cartId/cartItem', cartValidator, authenticate, async (req, r
         }
 
         const newItem = {
+            name: req.body.name,
             quantity: req.body.quantity,
             storeItemId: req.body.storeItemId
         }
@@ -247,6 +263,11 @@ router.post('/cart/:cartId/cartItem', cartValidator, authenticate, async (req, r
             return res.send(404);
         }
 
+        //return 400 if quantity of item in store is less than quantity of body
+        if (foundItemInStore.quantity < req.body.quantity) {
+            return res.send(400);
+        }
+
         //find if item already in cart
         const itemAlreadyInCart = foundCart.cartItems.find((item) => {
             return item.storeItemId == newItem.storeItemId;
@@ -255,6 +276,9 @@ router.post('/cart/:cartId/cartItem', cartValidator, authenticate, async (req, r
         if (itemAlreadyInCart) {
             itemAlreadyInCart.quantity += newItem.quantity;
             await Cart.replaceOne({_id: foundCart._id}, {cartItems: foundCart.cartItems});
+
+            foundItemInStore.quantity -= newItem.quantity;
+            await StoreItem.updateOne({_id: foundItemInStore._id}, {quantity: foundItemInStore.quantity});
         }
         else {
             foundCart.cartItems.push(newItem);
@@ -307,9 +331,12 @@ router.delete('/cart/:cartId/cartItem/:cartItemId', authenticate, async (req, re
 //session - get the last retrieved storeItems
 router.get('/StoreItem/Recent', async (req, res) => {
     let lastViewedItems = await req.session.lastViewedItems;
+    
+    //return empty array if lastViewedItems is not found
+    if (!lastViewedItems) return res.send([]);
 
     //filter number of items to return if less then 10
-    if (req.query.num && req.query.num < 10) {
+    if (req.query.num && req.query.num > 0 && req.query.num < 10) {
         lastViewedItems = lastViewedItems.slice(Math.max(lastViewedItems.length - req.query.num, 0));
     }
     //return up to 10 items
@@ -354,10 +381,16 @@ router.get('/StoreItem/:storeItemId', async (req, res) => {
 router.get('/StoreItem', async (req, res) => {
     let foundStoreItems = await StoreItem.find({});
     if (req.query.query) {
-        const regex = /req.query.query/;
+
+        //return all items have name contains query string
         foundStoreItems = foundStoreItems.filter((item) => {
-            return regex.test(item.description) || regex.test(item.name);
+            return item.name.includes(req.query.query)
         });
+
+        // const regex = /req.query.query/;
+        // foundStoreItems = foundStoreItems.filter((item) => {
+        //     return regex.test(item.description) || regex.test(item.name);
+        // });
     }
 
     res.send(foundStoreItems);
@@ -375,7 +408,10 @@ router.post('/user/login', async (req, res) => {
         //create token 
         const accessToken = jwt.sign({user: foundUser}, accessTokenSecret);
 
-        res.send(accessToken);
+        res.send({
+            token: accessToken,
+            user: foundUser
+        });
     }
     else {
         res.send(403);

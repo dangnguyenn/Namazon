@@ -46,6 +46,7 @@ const initCarts = async (size) => {
         for (let j = 0; j < numberOfItem; j++) {
             const assignedItem = storeItems[Math.floor(Math.random()*storeItems.length)];
             items.push({
+                name: assignedItem.name,
                 quantity: Math.floor(Math.random()*10 + 1),
                 storeItemId: assignedItem._id
             });
@@ -64,8 +65,9 @@ const initStoreItems = async (size) => {
 
     for (let i = 0; i < size; i++) {
         storeItems.push({
+            name: listOfThings[i%50],
             quantity: Math.floor(Math.random()*100 + 1),
-            price: Math.floor(Math.random()*100 + 1)
+            price: Math.floor(Math.random()*100 + 1),    
         })
     }
 
@@ -88,3 +90,55 @@ const populateDB = async (storeSize, cartSize) => {
 }
 
 module.exports = populateDB;
+
+const listOfThings = [
+"mop",
+"cinder block",
+"doll",
+"ring",
+"camera",
+"key chain",
+"monitor",
+"magnet",
+"cat",
+"puddle",
+"cell phone",
+"pillow",
+"toe ring",
+"nail file",
+"keyboard",
+"fridge",
+"paper",
+"plate",
+"tissue box",
+"bananas",
+"clamp",
+"washing machine",
+"towel",
+"tire swing",
+"eye liner",
+"house",
+"rug",
+"pool stick",
+"picture frame",
+"helmet",
+"money",
+"shoe lace",
+"floor",
+"desk",
+"keys",
+"air freshener",
+"nail clippers",
+"bracelet",
+"pants",
+"knife",
+"spring",
+"needle",
+"photo album",
+"remote",
+"bow",
+"tomato",
+"lip gloss",
+"deodorant",
+"bread",
+"brocolli"]
