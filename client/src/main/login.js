@@ -1,10 +1,3 @@
-// click on item to see item detail -> will show up on recently viewed
-// click cart with plus to add to your cart
-// click delete icon to delete item from cart
-// sometimes has delay -> please wait
-// username: first.lastname
-// password: password123 (for all users)
-
 import React from 'react';
 import axios from 'axios';
 import { Button, TextField } from '@material-ui/core';
